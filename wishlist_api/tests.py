@@ -5,9 +5,10 @@ import factory
 import datetime
 
 from rest_framework.test import APIRequestFactory
-from django.urls import reverse
 from rest_framework import status
-from rest_framework.test import APITestCase, force_authenticate
+from rest_framework.test import APIClient, APITestCase
+
+
 from wishlist_api.models import Book
 
 
@@ -31,7 +32,6 @@ class BookFactory(factory.django.DjangoModelFactory):
     author = factory.Sequence(lambda n: 'author{}'.format(n))
     isbn = factory.Sequence(lambda n: '12234-111{}'.format(n))
     date_pub = datetime.date.today()
-    # created = datetime.date.today()
 
 
 class UserModelTest(TestCase):
@@ -122,59 +122,30 @@ class BookTests(APITestCase):
     Test cases for the Wishlist API Book
     """
     def setUp(self):
+        self.client = APIClient()
         self.factory = APIRequestFactory()
-        self.user = UserFactory.create()
-        self.client.force_login(user=self.user)
-        self.book = BookFactory(owner=self.user)
+        # self.user = UserFactory.create()
+        self.user = User.objects.create_user('testuser',
+                                             email='test@user.com',
+                                             password='top_secret')
+        self.user.save()
 
-    def test_book_list(self):
-        """
-        Testing book list view
-        """
-        request = self.factory.get('/book/')
-        request.user = self.user
-        response = BookList.as_view()(request)
-        self.assertEqual(response.status_code, 200)
+    def _require_login(self):
+        self.client.login(username='testuser', password='top_secret')
 
-    def test_user_list(self):
+    def test_add_to_wishlist_authenticated(self):
         """
         Testing adding a book to the wishlist
         """
-        request = self.factory.get('/users/')
-        request.user = self.user
-        response = UserList.as_view()(request)
-        self.assertEqual(response.status_code, 200)
+        self.client.force_login(self.user)
+        response = self.client.post('/book/', {'title': 'Moby Dick'})
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
-
-
-    # def test_user_detail(self):
-    #     """
-    #     Testing adding a book to the wishlist
-    #     """
-    #     request = self.factory.get('/users/1/')
-    #     request.user = self.user
-    #     response = UserDetail.as_view()(request)
-    #     self.assertEqual(response.status_code, 200)
-
-    def test_add_to_wishlist(self):
+    def test_add_to_wishlist_not_authenticated(self):
         """
         Testing adding a book to the wishlist
         """
         request = self.factory.post('/book/', {'title': 'Moby Dick'})
         request.user = self.user
-        force_authenticate(request, user=self.user)
-        self.client.force_login(self.user)
         response = BookList.as_view()(request)
-        self.assertEqual(response.status_code, 201)
-
-    # def test_user_detail(self):
-    #     """
-    #     Testing retrieving User details
-    #     """
-    #     url = reverse('book')
-
-
-        #
-        # response = self.client.get('/users/1/')
-        # self.assertEqual(response.data, {'first_name': 'David',
-        #                                  'last_name': 'Banks'})
+        self.assertEqual(response.status_code, 403)

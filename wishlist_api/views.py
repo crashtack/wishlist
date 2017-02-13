@@ -42,5 +42,7 @@ class UserDetail(generics.RetrieveAPIView):
     """
     Get a single users details
     """
+    permission_classes = (permissions.IsAuthenticatedOrReadOnly,
+                          IsOwnerOrReadOnly)
     queryset = User.objects.all()
     serializer_class = UserSerializer
