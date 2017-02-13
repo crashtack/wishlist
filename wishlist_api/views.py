@@ -1,7 +1,8 @@
-from rest_framework import generics
+from rest_framework import generics, permissions
 from django.contrib.auth.models import User
 from wishlist_api.models import Book
 from wishlist_api.serializers import BookSerializer, UserSerializer
+from wishlist_api.permissions import IsOwnerOrReadOnly
 
 
 class BookList(generics.ListCreateAPIView):
@@ -23,6 +24,8 @@ class BookDetail(generics.RetrieveUpdateDestroyAPIView):
     """
     Get details, update, or delete a wish list entry
     """
+    permission_classes = (permissions.IsAuthenticatedOrReadOnly,
+                          IsOwnerOrReadOnly)
     queryset = Book.objects.all()
     serializer_class = BookSerializer
 
@@ -39,5 +42,7 @@ class UserDetail(generics.RetrieveAPIView):
     """
     Get a single users details
     """
+    permission_classes = (permissions.IsAuthenticatedOrReadOnly,
+                          IsOwnerOrReadOnly)
     queryset = User.objects.all()
     serializer_class = UserSerializer
