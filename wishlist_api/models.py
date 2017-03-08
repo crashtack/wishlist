@@ -25,3 +25,4 @@ class Book(models.Model):
     date_pub = models.DateField(editable=True,
                                 blank=True,
                                 null=True)
+    foo_bar = models.CharField('Foo_Bar', max_length=32, default='foo bar')
